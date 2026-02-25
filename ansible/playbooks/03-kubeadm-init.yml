@@ -1,0 +1,31 @@
+---
+- name: Initialize control-plane
+  hosts: control
+  become: true
+  tasks:
+    - name: Check if cluster already initialized
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: kube_admin_conf
+
+    - name: Initialize Kubernetes cluster
+      command: kubeadm init --pod-network-cidr={{ pod_cidr }}
+      when: not kube_admin_conf.stat.exists
+
+    - name: Configure kubeconfig for root
+      shell: |
+        mkdir -p /root/.kube
+        cp -f /etc/kubernetes/admin.conf /root/.kube/config
+        chown root:root /root/.kube/config
+      changed_when: false
+
+    - name: Generate worker join command
+      command: kubeadm token create --print-join-command
+      register: join_cmd
+      changed_when: false
+
+    - name: Save join command for worker playbook
+      copy:
+        dest: /tmp/kubeadm_join_cmd.sh
+        content: "{{ join_cmd.stdout }}\n"
+        mode: '0700'

@@ -1,0 +1,35 @@
+---
+- name: Install kubeadm, kubelet and kubectl
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Ensure keyring directory exists
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+
+    - name: Add Kubernetes apt key
+      shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/Release.key \
+          | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add Kubernetes apt repository
+      copy:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        content: |
+          deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/ /
+
+    - name: Install Kubernetes components
+      apt:
+        update_cache: true
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+
+    - name: Hold Kubernetes packages
+      command: apt-mark hold kubelet kubeadm kubectl
+      changed_when: false

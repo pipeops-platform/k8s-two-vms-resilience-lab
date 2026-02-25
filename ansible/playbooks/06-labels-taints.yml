@@ -1,0 +1,24 @@
+---
+- name: Configure labels and control-plane taint removal
+  hosts: control
+  become: true
+  tasks:
+    - name: Remove control-plane taint for practical scheduling
+      command: kubectl taint nodes {{ control_plane_name }} node-role.kubernetes.io/control-plane-
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      register: taint_result
+      failed_when: false
+      changed_when: "'untainted' in taint_result.stdout"
+
+    - name: Label control-plane node
+      command: kubectl label node {{ control_plane_name }} topology.kubernetes.io/zone=vm1 --overwrite
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false
+
+    - name: Label worker node
+      command: kubectl label node {{ worker_name }} topology.kubernetes.io/zone=vm2 --overwrite
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false

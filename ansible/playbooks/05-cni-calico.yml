@@ -1,0 +1,10 @@
+---
+- name: Install Calico CNI
+  hosts: control
+  become: true
+  tasks:
+    - name: Apply Calico manifest
+      command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/calico.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false

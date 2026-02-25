@@ -1,0 +1,9 @@
+[control]
+vm1-control ansible_host=10.0.0.11 ansible_user=ubuntu
+
+[workers]
+vm2-worker ansible_host=10.0.0.12 ansible_user=ubuntu
+
+[k8s_cluster:children]
+control
+workers
